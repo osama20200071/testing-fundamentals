@@ -2,8 +2,13 @@ import type { paths } from '@octokit/openapi-types';
 type OrgRepoResponse =
   paths['/repos/{owner}/{repo}']['get']['responses']['200']['content']['application/json'];
 
+export type Fetch = typeof fetch;
+
 export class GithubApi {
-  constructor(private token?: string) {}
+  constructor(
+    private token: string | undefined,
+    private localFetch: Fetch = fetch
+  ) {}
 
   async getRepository(user: string, repo: string) {
     const headers: HeadersInit = {
@@ -14,7 +19,7 @@ export class GithubApi {
       headers['Authorization'] = 'Bearer ' + this.token;
     }
 
-    const response = await fetch(
+    const response = await this.localFetch(
       `https://api.github.com/repos/${user}/${repo}`,
       {
         headers,
