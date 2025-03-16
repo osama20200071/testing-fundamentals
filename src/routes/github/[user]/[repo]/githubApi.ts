@@ -7,7 +7,8 @@ export type Fetch = typeof fetch;
 export class GithubApi {
   constructor(
     private token: string | undefined,
-    private localFetch: Fetch = fetch
+    private localFetch: Fetch = fetch,
+    private localDelay: (ms: number) => Promise<void> = delay
   ) {}
 
   async getRepository(user: string, repo: string) {
@@ -19,13 +20,24 @@ export class GithubApi {
       headers['Authorization'] = 'Bearer ' + this.token;
     }
 
-    const response = await this.localFetch(
-      `https://api.github.com/repos/${user}/${repo}`,
-      {
+    return Promise.race([
+      this.localDelay(4000).then(() => ({ response: 'timeout' })),
+      this.localFetch(`https://api.github.com/repos/${user}/${repo}`, {
         headers,
-      }
-    );
-    const repository = (await response.json()) as OrgRepoResponse;
-    return repository;
+      }).then((res) => res.json()),
+    ]);
+
+    // const response = await this.localFetch(
+    //   `https://api.github.com/repos/${user}/${repo}`,
+    //   {
+    //     headers,
+    //   }
+    // );
+    // const repository = (await response.json()) as OrgRepoResponse;
+    // return repository;
   }
+}
+
+export function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

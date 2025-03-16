@@ -1,6 +1,6 @@
 import { component$ } from '@builder.io/qwik';
 import { routeLoader$, useLocation } from '@builder.io/qwik-city';
-import { GithubApi } from './githubApi';
+import { GithubApi, delay } from './githubApi';
 
 export const useRepository = routeLoader$(async ({ params, env }) => {
   const user = params.user;
