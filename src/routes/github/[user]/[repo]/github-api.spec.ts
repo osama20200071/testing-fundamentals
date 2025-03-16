@@ -1,5 +1,6 @@
 import { describe, it, vi, Mock, beforeEach } from 'vitest';
-import { Fetch, GithubApi } from './githubApi';
+import { delay, Fetch, GithubApi } from './githubApi';
+import { object } from 'valibot';
 
 describe('github-api', () => {
   let fetchMock: Mock<Parameters<Fetch>, ReturnType<Fetch>>;
@@ -58,6 +59,37 @@ describe('github-api', () => {
       delayMock.mock.results[0].value.resolve();
 
       expect(await responsePromise).toEqual({ response: 'timeout' });
+    });
+  });
+
+  describe('getRepositories', () => {
+    it('should fetch all the repos for specific username', async ({
+      expect,
+    }) => {
+      const responsePromise = api.getRepositories('USERNAME');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.github.com/users/USERNAME/repos?per_page=30&page=1',
+        expect.any(Object)
+      );
+
+      const repoSet1 = new Array(30).fill(null).map((_, i) => ({ id: i }));
+
+      // we are resolving this particular promise , but we don't yield to the schedular
+      fetchMock.mock.results[0].value.resolve(
+        new Response(JSON.stringify(repoSet1))
+      );
+
+      // why this ?
+      // it's a little trick to yield to the schedule so the other promise can run
+      await delay(0); // to make sure the async operations happen in the correct order
+
+      const repoSet2 = [{ id: 30 }];
+      fetchMock.mock.results[1].value.resolve(
+        new Response(JSON.stringify(repoSet2))
+      );
+
+      expect(await responsePromise).toEqual([...repoSet1, ...repoSet2]);
     });
   });
 });
