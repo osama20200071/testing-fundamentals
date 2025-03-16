@@ -42,7 +42,10 @@ describe('github-api', () => {
       const fetchMock = vi.fn<Parameters<Fetch>, ReturnType<Fetch>>(
         mockPromise
       );
-      const api = new GithubApi('TOKEN', fetchMock);
+
+      const delayMock = vi.fn<[number], Promise<void>>(mockPromise);
+
+      const api = new GithubApi('TOKEN', fetchMock, delayMock);
       // here we need to git red of await so we get the actual response promise
       const responsePromise = api.getRepository('USERNAME', 'REPO');
 
@@ -58,14 +61,15 @@ describe('github-api', () => {
         }
       );
 
-      // accessing the returned value from the first call
-      console.log(fetchMock.mock.results[0].value);
-
-      // here we are mocking resolving the response promise with specific value
-      const firstCallResult = fetchMock.mock.results[0];
-      const returnedPromise = firstCallResult.value;
       // we don't respond so it will timeout
       // returnedPromise.resolve(new Response('"RESPONSE"'));
+
+      // verifying that the delay method gets the ms
+      expect(delayMock).toHaveBeenCalledWith(4000);
+
+      // here we make the delay function ==== resolves immediately === so it simulates the timeout
+      // and we don't need to wait the full actual delay
+      delayMock.mock.results[0].value.resolve();
 
       expect(await responsePromise).toEqual({ response: 'timeout' });
     });
