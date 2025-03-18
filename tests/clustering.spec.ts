@@ -27,6 +27,18 @@ test('it prints the current Parameters', async ({ page }) => {
   await expect(clusterPage.minClusterSize).toHaveText('10');
 });
 
+test('it should print validation error when out of bound Parameters are passed', async ({
+  page,
+}) => {
+  const clusterPage = new ClusterPage(page);
+  await clusterPage.goto({});
+  await clusterPage.setDistance(1);
+  await clusterPage.submit();
+  await expect(clusterPage.distanceError).toHaveText(
+    'Distance must be at least 100'
+  );
+});
+
 type GotoPrams = {
   distance?: number;
   size?: number;
@@ -53,6 +65,10 @@ class ClusterPage {
   get distance() {
     return this.page.locator('span.distance');
   }
+  async setDistance(distance: number) {
+    // filling this selected element with specific value
+    await this.page.fill('input[name=distance]', distance.toString());
+  }
 
   get size() {
     return this.page.locator('span.size');
@@ -60,5 +76,13 @@ class ClusterPage {
 
   get minClusterSize() {
     return this.page.locator('span.min-cluster-size');
+  }
+
+  submit() {
+    return this.page.click('[type=submit]');
+  }
+
+  get distanceError() {
+    return this.page.locator('.error.distance');
   }
 }
